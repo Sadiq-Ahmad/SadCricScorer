@@ -160,9 +160,26 @@ function prof(id){
 }
 function photo(id){const i=document.createElement('input');i.type='file';i.accept='image/*';
  i.onchange=()=>{const f=i.files[0];if(!f)return;const im=new Image();
-  im.onload=()=>{const c=document.createElement('canvas');c.width=c.height=120;const x=c.getContext('2d'),s=Math.min(im.width,im.height);
-   x.drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,120,120);P(id).pic=c.toDataURL('image/jpeg',.7);save();render();prof(id)};
+  im.onload=async()=>{
+   let cx=im.width/2,cy=im.height/2,sz=Math.min(im.width,im.height);
+   try{if('FaceDetector' in window){const fs=await new FaceDetector({maxDetectedFaces:1}).detect(im);
+    if(fs.length){const b=fs[0].boundingBox;cx=b.x+b.width/2;cy=b.y+b.height/2;sz=Math.max(b.width,b.height)*2.2}}}catch(e){}
+   cropUI(id,im,cx,cy,sz)};
   im.src=URL.createObjectURL(f)};i.click()}
+let CR=null;
+function cropUI(id,im,cx,cy,sz){
+ const sh=Math.min(im.width,im.height);CR={id,im,cx,cy,sh,pct:Math.max(10,Math.min(100,sz/sh*100))};
+ M.innerHTML=`<div class=md style="text-align:center"><h3>Photo set karein</h3><div class=mu style="margin-bottom:8px">Ungli se khinch kar chehra beech mein layen, slider se zoom karein</div><canvas id=cv width=400 height=400 style="width:300px;max-width:100%;border-radius:12px;touch-action:none"></canvas><input type=range min=10 max=100 value="${CR.pct}" style="width:100%;margin:10px 0" oninput="CR.pct=+this.value;cdraw()"><div><button class="b p" onclick="csave()">Save</button> <button class=b onclick="M.style.display='none'">Raddi</button></div></div>`;
+ M.style.display='flex';cdraw();
+ const cv=$('#cv');let lx=null,ly;
+ cv.onpointerdown=e=>{lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId)};
+ cv.onpointermove=e=>{if(lx==null)return;const k=CR.pct/100*CR.sh/cv.getBoundingClientRect().width;CR.cx-=(e.clientX-lx)*k;CR.cy-=(e.clientY-ly)*k;lx=e.clientX;ly=e.clientY;cdraw()};
+ cv.onpointerup=cv.onpointercancel=()=>{lx=null};
+}
+function cdraw(f){const c=f||$('#cv'),im=CR.im,sz=CR.pct/100*CR.sh;
+ CR.cx=Math.max(sz/2,Math.min(im.width-sz/2,CR.cx));CR.cy=Math.max(sz/2,Math.min(im.height-sz/2,CR.cy));
+ c.getContext('2d').drawImage(im,CR.cx-sz/2,CR.cy-sz/2,sz,sz,0,0,c.width,c.height)}
+function csave(){const c=document.createElement('canvas');c.width=c.height=400;cdraw(c);P(CR.id).pic=c.toDataURL('image/jpeg',.9);save();M.style.display='none';render();prof(CR.id)}
 function ren(id){const n=prompt('Naya naam',nm(id));if(n&&n.trim()){P(id).name=n.trim();save();render();prof(id)}}
 function delP(id){if(confirm('Player hatana hai? Purane match mein naam "?" dikhega.')){D.p=D.p.filter(p=>p.id!=id);save();M.style.display='none';render()}}
 
