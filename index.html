@@ -12,11 +12,11 @@
 body{margin:0;background:var(--bg);color:var(--tx);font:15px system-ui,sans-serif;padding-bottom:70px}
 #app{padding:12px;max-width:560px;margin:auto}
 nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#0a1a11;border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0)}
-nav button{flex:1;background:none;border:0;color:var(--mu);padding:14px 0;font-size:15px}
+nav button{flex:1;background:none;border:0;color:var(--mu);padding:14px 0;font-size:13px}
 nav button.on{color:var(--ac);font-weight:700}
 .c{background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:12px}
 h3{margin:0 0 8px;font-size:17px}
-input,select{background:#0f2418;color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:9px;font-size:15px;max-width:100%}
+input,select,textarea{background:#0f2418;color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:9px;font-size:15px;max-width:100%}
 button{font:inherit;color:var(--tx)}
 .b{background:var(--ln);border:0;border-radius:8px;padding:11px 14px}
 .b.p{background:var(--ac);color:#1a1a0f;font-weight:700}
@@ -47,7 +47,7 @@ th{color:var(--mu);font-weight:500}
 <nav id="tabs"></nav>
 <script>
 let D;try{D=JSON.parse(localStorage.getItem('cc')||'null')}catch(e){}
-D=D||{p:[],m:[]};
+D=D||{p:[],m:[]};D.tn=D.tn||[];D.tn.forEach(t=>{if(t.type=='s6'||t.type=='s8'){t.sn=t.type=='s6'?6:8;t.sg=2;t.kk=4;t.type='sp'}});D.tn.forEach(t=>{if(t.type=='s6'||t.type=='s8'){t.type='sup';t.sg=2}t.late=t.late||[]});
 const save=()=>{try{localStorage.setItem('cc',JSON.stringify(D))}catch(e){}};
 const $=s=>document.querySelector(s),M=$('#M');
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -106,12 +106,174 @@ function shareImg(id){
  });
 }
 
+
+/* ---------- TOURNAMENT ---------- */
+let ctn=null,tsub='fx',T2={name:'',type:'ko',ov:4,sz:6,lm:true,g:1,sn:6,sg:2,kk:4,teams:''};
+const TY={ko:'Knockout',sp:'Super stage (apni marzi)'},GL='ABCD';
+const DESC={ko:'Jo team haare woh bahar. Aakhir mein Final. Teams kisi bhi waqt add ho sakti hain.',sp:'League (groups) → Super stage (teams ki tadaad aap chunein) → Semi Final → Final. Super stage 0 rakhein to League ke baad seedha Semi/Final.'};
+const SN=tn=>'Super '+tn.sn;
+const tname=tn=>tn.type=='ko'?'Knockout':tn.sn>0?'Super '+tn.sn+' · '+tn.g+' group league':'League → Knockout';
+const gids=(tn,k)=>[...new Set(tn.fx.filter(f=>f.st=='League'&&f.gp==k).flatMap(f=>[f.a,f.b]))];
+const tm=(tn,id)=>tn.teams.find(t=>t.id==id)||{n:'?',pl:[]};
+const kn=c=>c==2?'Final':c<=4?'Semi Final':c<=8?'Quarter Final':'Round of '+c;
+const snk=(i,g)=>{const r=Math.floor(i/g),k=i%g;return r%2?g-1-k:k};
+function back(){const m=cur();if(m&&m.tn){tab='tn';ctn=m.tn}cm=null;render()}
+function openM(id){tab='match';cm=id;render()}
+function rr(tn,ids,st,gp){for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++)tn.fx.push({id:uid(),a:ids[i],b:ids[j],st,gp})}
+function koRound(tn,ids){const st=kn(ids.length);tn.cs=st;let i=0;if(ids.length%2){tn.fx.push({id:uid(),a:ids[0],b:null,st,ko:1,bye:1});i=1}for(;i<ids.length;i+=2)tn.fx.push({id:uid(),a:ids[i],b:ids[i+1],st,ko:1})}
+function fres(tn,f){if(f.bye)return f.a;const m=D.m.find(x=>x.id==f.mid);if(!m||!m.done)return null;const w=win(m);
+ if(w==-1){if(f.ko)return m.tw!=null?m.t[m.tw].tid:null;return 'tie'}return m.t[w].tid}
+function stand(tn,st,gp){
+ const fs=tn.fx.filter(f=>f.st==st&&f.gp==gp&&!f.bye),R={};
+ fs.forEach(f=>[f.a,f.b].forEach(id=>R[id]||(R[id]={id,P:0,W:0,L:0,T:0,Pts:0,rf:0,bf:0,ra:0,ba:0})));
+ fs.forEach(f=>{const m=D.m.find(x=>x.id==f.mid);if(!m||!m.done)return;
+  m.inn.forEach(n=>{const a=m.t[n.bat].tid,o=m.t[1-n.bat].tid,bt=m.t[n.bat].pl.length,all=bt>0&&wk(n)>=bt-(m.lm?0:1),b=all?m.ov*6:lb(n);R[a].rf+=tot(n);R[a].bf+=b;R[o].ra+=tot(n);R[o].ba+=b});
+  const w=fres(tn,f);R[f.a].P++;R[f.b].P++;
+  if(w=='tie'){R[f.a].T++;R[f.b].T++;R[f.a].Pts++;R[f.b].Pts++}
+  else if(w){const l=w==f.a?f.b:f.a;R[w].W++;R[w].Pts+=2;R[l].L++}});
+ return Object.values(R).map(r=>({...r,nrr:(r.bf?r.rf/(r.bf/6):0)-(r.ba?r.ra/(r.ba/6):0)})).sort((a,b)=>b.Pts-a.Pts||b.nrr-a.nrr||b.W-a.W);
+}
+function mkTn(){
+ const n=T2.teams.split('\n').map(x=>x.trim()).filter(Boolean);
+ if(!T2.name.trim())return toast('Tournament ka naam likhein');
+ if(n.length<2)return toast('Kam az kam 2 teams likhein (baqi baad mein add ho sakti hain)');
+ const sp=T2.type=='sp',g=sp?+T2.g:1,N=sp?Math.max(0,+T2.sn||0):0;
+ const tn={id:uid(),name:T2.name.trim(),type:T2.type,ov:+T2.ov||4,sz:+T2.sz||6,lm:T2.lm,g,sn:N,sg:+T2.sg||2,kk:+T2.kk||4,teams:n.map(x=>({id:uid(),n:x,pl:[]})),fx:[]};
+ if(!sp)koRound(tn,tn.teams.map(t=>t.id));
+ else{tn.cs='League';for(let k=0;k<g;k++)rr(tn,tn.teams.filter((t,i)=>snk(i,g)==k).map(t=>t.id),'League',GL[k])}
+ D.tn.push(tn);save();ctn=tn.id;tsub='sq';T2.name='';T2.teams='';render();toast('Ab har team ka squad banayein');
+}
+const cmpR=(a,b)=>b.Pts-a.Pts||b.nrr-a.nrr||b.W-a.W;
+function selTeams(tn,Q){
+ const q=Math.floor(Q/tn.g),top=[],rest=[];
+ for(let k=0;k<tn.g;k++){const s=stand(tn,'League',GL[k]);s.slice(0,q).forEach(r=>top.push(r));s.slice(q).forEach(r=>rest.push(r))}
+ rest.sort(cmpR);while(top.length<Q&&rest.length)top.push(rest.shift());
+ return top.sort(cmpR)}
+function koSeed(tn,ids){
+ const P=ids.length>=4&&tn.kk>=4?[[ids[0],ids[3]],[ids[1],ids[2]]]:[[ids[0],ids[1]]];
+ tn.cs=P.length>1?'Semi Final':'Final';P.forEach(p=>tn.fx.push({id:uid(),a:p[0],b:p[1],st:tn.cs,ko:1}))}
+function advance(){
+ const tn=D.tn.find(x=>x.id==ctn),F=tn.fx.filter(f=>f.st==tn.cs);
+ if(!F.length||F.some(f=>fres(tn,f)==null))return toast('Pehle is round ke sab match poore karein');
+ const W=F.map(f=>fres(tn,f)),cs=tn.cs;
+ if(tn.type=='ko'){const ids=[...W,...(tn.late||[])];tn.late=[];if(ids.length==1){tn.champ=ids[0];tn.cs='Done'}else koRound(tn,ids)}
+ else if(cs=='Final'){tn.champ=W[0];tn.cs='Done'}
+ else if(cs=='Semi Final'){tn.cs='Final';tn.fx.push({id:uid(),a:W[0],b:W[1],st:'Final',ko:1})}
+ else if(cs=='League'){
+  const S=selTeams(tn,tn.sn>0?tn.sn:tn.kk);
+  if(S.length<2)return toast('Kam az kam 2 teams chahiye');
+  if(tn.sn>0){const sg=Math.max(1,Math.min(tn.sg,Math.floor(S.length/2)));tn.sga=sg;tn.cs=SN(tn);
+   for(let k=0;k<sg;k++)rr(tn,S.filter((r,i)=>snk(i,sg)==k).map(r=>r.id),tn.cs,GL[k])}
+  else koSeed(tn,S.map(r=>r.id));
+ }else{
+  const sg=tn.sga||2,T=[];for(let k=0;k<sg;k++)T.push(stand(tn,cs,GL[k]));
+  const pf=(a,b,st)=>tn.fx.push({id:uid(),a,b,st,ko:1});
+  if(sg==2&&tn.kk>=4&&T[0].length>1&&T[1].length>1){tn.cs='Semi Final';pf(T[0][0].id,T[1][1].id,tn.cs);pf(T[1][0].id,T[0][1].id,tn.cs)}
+  else if(sg==2){tn.cs='Final';pf(T[0][0].id,T[1][0].id,'Final')}
+  else koSeed(tn,T[0].map(r=>r.id));
+ }
+ save();render();
+}
+function pickT(t,items,cb){M.innerHTML=`<div class=md><h3>${t}</h3>${items.map((x,i)=>`<button class=it onclick="PT(${i})">${x[1]}</button>`).join('')}<button class=it onclick="PT(-1)">Raddi</button></div>`;M.style.display='flex';window.PT=i=>{M.style.display='none';if(i>=0)cb(items[i][0]);save();render()}}
+function mfx(){
+ const tn=D.tn.find(x=>x.id==ctn);if(tn.cs=='Done')return;
+ pickT('Team A',tn.teams.map(t=>[t.id,t.n]),a=>pickT('Team B',tn.teams.filter(t=>t.id!=a).map(t=>[t.id,t.n]),b=>{
+  const grp=tn.type!='ko'&&(tn.cs=='League'||tn.cs==SN(tn)),ko=!grp,gof=id=>{const f=tn.fx.find(f=>f.st==tn.cs&&f.gp&&(f.a==id||f.b==id));return f?f.gp:null};
+  const ga=gof(a),gb=gof(b);
+  tn.fx.push({id:uid(),a,b,st:tn.cs,gp:grp&&ga&&ga==gb?ga:undefined,ko:ko?1:undefined});toast('Match jud gaya')}));
+}
+function delFx(fid){if(!confirm('Yeh match hatana hai?'))return;const tn=D.tn.find(x=>x.id==ctn);tn.fx=tn.fx.filter(f=>f.id!=fid||f.mid);save();render()}
+function addTeamUI(){
+ const tn=D.tn.find(x=>x.id==ctn);if(tn.cs=='Done')return;
+ const grp=tn.type=='sp'&&tn.cs=='League'&&tn.g>1;
+ M.innerHTML=`<div class=md><h3>Nayi team shamil karein</h3><input id=ntn placeholder="Team ka naam" style="width:100%;margin-bottom:8px">${grp?`<div class=mu>Kis group mein?</div><select id=ntg style="width:100%;margin-bottom:8px">${[...Array(tn.g).keys()].map(k=>`<option value=${k}>Group ${GL[k]} (${gids(tn,GL[k]).length} teams)</option>`).join('')}</select>`:''}<button class="b p" onclick="addTeam()">Add</button> <button class=b onclick="M.style.display='none'">Raddi</button></div>`;M.style.display='flex';
+}
+function addTeam(){
+ const tn=D.tn.find(x=>x.id==ctn),n=$('#ntn').value.trim();if(!n)return toast('Naam likhein');
+ const t={id:uid(),n,pl:[]};tn.teams.push(t);let msg;
+ if(tn.type=='sp'&&tn.cs=='League'){const gp=GL[$('#ntg')?+$('#ntg').value:0];gids(tn,gp).forEach(o=>tn.fx.push({id:uid(),a:o,b:t.id,st:'League',gp}));msg='Team League mein shamil, fixtures ban gaye'}
+ else if(tn.type=='ko'){
+  const F=tn.fx.filter(f=>f.st==tn.cs);
+  if(F.every(f=>!f.mid)){const ids=F.flatMap(f=>f.b?[f.a,f.b]:[f.a]);tn.fx=tn.fx.filter(f=>f.st!=tn.cs);koRound(tn,[...ids,t.id]);msg='Team is round mein shamil, fixtures dobara bane'}
+  else{tn.late=(tn.late||[]).concat(t.id);msg='Round shuru ho chuka hai, team agle round mein shamil hogi'}}
+ else msg='Team add ho gayi. "Match jodein" se iske matches banayein';
+ save();M.style.display='none';render();toast(msg);
+}
+function startFx(fid){
+ const tn=D.tn.find(x=>x.id==ctn),f=tn.fx.find(x=>x.id==fid),A=tm(tn,f.a),B=tm(tn,f.b);
+ if(!A.pl.length||!B.pl.length)return toast('Pehle dono teams ke squad banayein');
+ M.innerHTML=`<div class=md><h3>Pehle batting kaun karega?</h3><button class=it onclick="goFx('${fid}',0)">${A.n}</button><button class=it onclick="goFx('${fid}',1)">${B.n}</button><button class=it onclick="M.style.display='none'">Raddi</button></div>`;M.style.display='flex';
+}
+function goFx(fid,bf){
+ M.style.display='none';const tn=D.tn.find(x=>x.id==ctn),f=tn.fx.find(x=>x.id==fid),A=tm(tn,f.a),B=tm(tn,f.b);
+ const m={id:uid(),d:Date.now(),ov:tn.ov,lm:tn.lm,tn:tn.id,fx:fid,t:[{n:A.n,pl:[...A.pl],tid:A.id},{n:B.n,pl:[...B.pl],tid:B.id}],inn:[{bat:bf,balls:[],s:null,n:null,bw:null}]};
+ D.m.push(m);f.mid=m.id;save();openM(m.id);
+}
+function tieW(mid){const m=D.m.find(x=>x.id==mid);
+ M.innerHTML=`<div class=md><h3>Tie: winner kaun?</h3><button class=it onclick="setTw('${mid}',0)">${m.t[0].n}</button><button class=it onclick="setTw('${mid}',1)">${m.t[1].n}</button></div>`;M.style.display='flex'}
+function setTw(mid,i){D.m.find(x=>x.id==mid).tw=i;save();M.style.display='none';render()}
+function sq(tid){
+ const tn=D.tn.find(x=>x.id==ctn),t=tm(tn,tid);
+ M.innerHTML=`<div class=md><h3>${t.n} squad (${t.pl.length}/${tn.sz})</h3>${D.p.map(p=>{const o=tn.teams.find(x=>x.id!=tid&&x.pl.includes(p.id)),on=t.pl.includes(p.id);return `<button class=it style="${on?'background:var(--ac);color:#111':''}" onclick="tgS('${tid}','${p.id}')">${on?'✓ ':''}${p.name}${o?` <span class=mu>(${o.n})</span>`:''}</button>`}).join('')}<input id=sqn placeholder="Naya player" style="width:62%"> <button class=b onclick="sqAdd('${tid}')">+</button><div style="margin-top:10px"><button class="b p" onclick="M.style.display='none';render()">Done</button></div></div>`;M.style.display='flex';
+}
+function tgS(tid,pid){const tn=D.tn.find(x=>x.id==ctn);tn.teams.forEach(t=>{const i=t.pl.indexOf(pid);if(i>=0&&t.id!=tid)t.pl.splice(i,1)});const t=tm(tn,tid),i=t.pl.indexOf(pid);i>=0?t.pl.splice(i,1):t.pl.push(pid);save();sq(tid)}
+function sqAdd(tid){const id=addP($('#sqn').value);if(id)tgS(tid,id);else sq(tid)}
+function delTn(){if(!confirm('Poora tournament aur uske matches delete karne hain?'))return;D.m=D.m.filter(m=>m.tn!=ctn);D.tn=D.tn.filter(t=>t.id!=ctn);ctn=null;save();render()}
+function fxRow(tn,f){
+ const A=tm(tn,f.a);
+ if(f.bye)return `<div class=row><span><b>${A.n}</b><div class=mu>Bye: seedha agay</div></span></div>`;
+ const B=tm(tn,f.b),m=D.m.find(x=>x.id==f.mid);let s,b;
+ if(!m){s='Abhi shuru nahi';b=`<button class="b p" onclick="startFx('${f.id}')">Shuru</button> <button class=b onclick="delFx('${f.id}')">✕</button>`}
+ else if(!m.done){s='Jari hai';b=`<button class=b onclick="openM('${m.id}')">Jari ›</button>`}
+ else if(fres(tn,f)==null){s='Tie! Winner chunein';b=`<button class="b p" onclick="tieW('${m.id}')">Winner</button>`}
+ else{s=m.res+(m.tw!=null?' (tie ke baad '+m.t[m.tw].n+')':'');b=`<button class=b onclick="openM('${m.id}')">Scorecard</button>`}
+ return `<div class=row><span><b>${A.n}</b> vs <b>${B.n}</b><div class=mu>${s}</div></span>${b}</div>`;
+}
+function tnList(){
+ const sp=T2.type=='sp';
+ return `<div class=c><h3>Tournaments</h3>${D.tn.map(t=>`<div class=row onclick="ctn='${t.id}';tsub='fx';render()"><span>🏆 ${t.name}<div class=mu>${tname(t)} · ${t.teams.length} teams · ${t.ov} over</div></span><span class=mu>${t.champ?'Khatam':t.cs} ›</span></div>`).join('')||'<div class=mu>Abhi koi tournament nahi.</div>'}</div>
+ <div class=c><h3>Naya tournament</h3>
+ <input placeholder="Tournament ka naam" value="${T2.name}" oninput="T2.name=this.value" style="width:100%;margin-bottom:8px">
+ <div class=row><span>Type</span><select onchange="T2.type=this.value;render()">${Object.entries(TY).map(([k,v])=>`<option value=${k} ${T2.type==k?'selected':''}>${v}</option>`).join('')}</select></div>
+ <div class=mu style="margin:6px 0">${DESC[T2.type]}</div>
+ <div class=row><span>Overs</span><input type=number min=1 value="${T2.ov}" oninput="T2.ov=this.value" style="width:80px"></div>
+ <div class=row><span>Players per team</span><input type=number min=2 value="${T2.sz}" oninput="T2.sz=this.value" style="width:80px"></div>
+ ${sp?`<div class=row><span>League groups</span><select onchange="T2.g=this.value">${[1,2,3,4].map(g=>`<option ${T2.g==g?'selected':''}>${g}</option>`).join('')}</select></div>
+ <div class=row><span>Super stage mein teams (0 = nahi)</span><input type=number min=0 value="${T2.sn}" oninput="T2.sn=this.value" style="width:80px"></div>
+ <div class=row><span>Super stage groups</span><select onchange="T2.sg=this.value">${[1,2].map(g=>`<option ${T2.sg==g?'selected':''}>${g}</option>`).join('')}</select></div>
+ <div class=row><span>Aakhir mein</span><select onchange="T2.kk=this.value"><option value=4 ${T2.kk==4?'selected':''}>Semi Final + Final</option><option value=2 ${T2.kk==2?'selected':''}>Seedha Final</option></select></div>`:''}
+ <label style="display:block;margin:8px 0"><input type=checkbox ${T2.lm?'checked':''} onchange="T2.lm=this.checked"> Last man allowed</label>
+ <textarea rows=6 placeholder="Teams: har line mein aik team ka naam (baad mein bhi add ho sakti hain)" oninput="T2.teams=this.value" style="width:100%">${T2.teams}</textarea>
+ <button class="b p" style="width:100%;margin-top:8px" onclick="mkTn()">Tournament banao</button></div>`;
+}
+function tnV(){
+ const tn=D.tn.find(x=>x.id==ctn);if(!tn){ctn=null;return tnList()}
+ const subs=[['fx','Fixtures'],['pt','Points'],['sq','Squads'],['st','Stats']];
+ let h=`<div class=mu onclick="ctn=null;render()" style="margin-bottom:8px">‹ Tournaments</div><div class=c><button class=b style="float:right" onclick="addTeamUI()">➕ Team</button><h3>🏆 ${tn.name}</h3><div class=mu>${tname(tn)} · ${tn.ov} over · ${tn.sz} players/team · Last man ${tn.lm?'haan':'nahi'}</div>${tn.champ?`<div style="margin-top:8px;color:var(--ac);font-weight:700">Champion: ${tm(tn,tn.champ).n} 🏆</div>`:`<div class=mu style="margin-top:6px">Stage: ${tn.cs}</div>`}</div>
+ <div class=sub>${subs.map(t=>`<button class="${tsub==t[0]?'on':''}" onclick="tsub='${t[0]}';render()">${t[1]}</button>`).join('')}</div>`;
+ if(tsub=='fx'){
+  h+=`<div style="display:flex;gap:8px;margin-bottom:10px"><button class=b onclick="addTeamUI()">➕ Team add</button><button class=b onclick="mfx()">➕ Match jodein</button></div>${tn.late&&tn.late.length?`<div class=mu style="margin-bottom:8px">Agle round ke intezar mein: ${tn.late.map(i=>tm(tn,i).n).join(', ')}</div>`:''}`;
+  [...new Set(tn.fx.map(f=>f.st+'|'+(f.gp||'')))].forEach(k=>{const[st,gp]=k.split('|');h+=`<div class=c><h3>${st}${gp?' · Group '+gp:''}</h3>${tn.fx.filter(f=>f.st==st&&(f.gp||'')==gp).map(f=>fxRow(tn,f)).join('')}</div>`});
+  if(tn.cs!='Done'&&tn.fx.filter(f=>f.st==tn.cs).every(f=>fres(tn,f)!=null))h+=`<button class="b p" style="width:100%" onclick="advance()">➡ ${tn.cs=='Final'?'Champion declare karo':'Agla round banao'}</button>`;
+ }
+ if(tsub=='pt'){
+  const ks=[...new Set(tn.fx.filter(f=>f.gp).map(f=>f.st+'|'+f.gp))];
+  if(!ks.length)h+=`<div class=c><div class=mu>Knockout mein points table nahi hota. Fixtures dekhein.</div></div>`;
+  ks.forEach(k=>{const[st,gp]=k.split('|'),q=st=='League'?Math.floor((tn.sn>0?tn.sn:tn.kk)/tn.g):(tn.sga==1?tn.kk:Math.floor(tn.kk/2));
+   h+=`<div class=c><h3>${st}${tn.g>1||st!='League'?' · Group '+gp:''}</h3><table><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>T</th><th>Pts</th><th>NRR</th></tr>${stand(tn,st,gp).map((r,i)=>`<tr style="${i<q?'color:var(--ac)':''}"><td>${i+1}</td><td>${tm(tn,r.id).n}</td><td>${r.P}</td><td>${r.W}</td><td>${r.L}</td><td>${r.T}</td><td><b>${r.Pts}</b></td><td>${r.nrr.toFixed(2)}</td></tr>`).join('')}</table></div>`});
+  if(ks.length)h+=`<div class=mu>Peela rang = agay jane wali teams. Jeet 2 points, tie 1 point.</div>`;
+ }
+ if(tsub=='sq')h+=tn.teams.map(t=>`<div class=c><div class=row style="border:0"><h3 style="margin:0">${t.n} <span class=mu>${t.pl.length}/${tn.sz}</span></h3><button class=b onclick="sq('${t.id}')">Squad badlein</button></div><div class=mu>${t.pl.map(nm).join(', ')||'Abhi koi player nahi'}</div></div>`).join('');
+ if(tsub=='st')h+=statsV(tn.id);
+ return h+`<div style="margin-top:14px"><button class=b style="color:#f88" onclick="delTn()">Tournament delete</button></div>`;
+}
+
 /* ---------- STATS ---------- */
-function stats(){
+function stats(tid){
  const S={};
  const g=id=>S[id]||(S[id]={id,r:0,bf:0,f4:0,s6:0,out:0,inn:0,hi:0,bb:0,rc:0,w:0,bi:0,best:null,mat:new Set(),W:0,Lo:0,Ti:0,tm:{}});
  D.p.forEach(p=>g(p.id));
- D.m.forEach(m=>{
+ D.m.filter(m=>!tid||m.tn==tid).forEach(m=>{
   m.t.forEach((t,ti)=>t.pl.forEach(id=>{const a=g(id);a.mat.add(m.id);if(m.done){const w=win(m),r=a.tm[t.n]||(a.tm[t.n]={w:0,l:0,t:0});if(w==-1){a.Ti++;r.t++}else if(w==ti){a.W++;r.w++}else{a.Lo++;r.l++}}}));
   m.inn.forEach(n=>{
    const bi={},bo={};
@@ -134,8 +296,8 @@ function stats(){
 const rbat=L=>L.filter(a=>a.inn).sort((a,b)=>b.r-a.r||b.sr-a.sr);
 const rbowl=L=>L.filter(a=>a.bb).sort((a,b)=>b.w-a.w||a.eco-b.eco);
 
-function statsV(){
- const L=stats();
+function statsV(tid){
+ const L=stats(tid);
  const tabs=[['bat','Batting'],['bowl','Bowling'],['s6','Sixes'],['f4','Fours'],['wl','Jeet/Haar']];
  let h=`<div class=sub>${tabs.map(t=>`<button class="${sub==t[0]?'on':''}" onclick="sub='${t[0]}';render()">${t[1]}</button>`).join('')}</div><div class=c>`;
  const row=(a,i,cells)=>`<tr onclick="prof('${a.id}')"><td>${i+1}</td><td>${av(a.id,24)}${nm(a.id)}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
@@ -191,7 +353,7 @@ function playersV(){
  <div class=c><h3>Backup</h3><div class=mu style="margin-bottom:8px">Phone badlein ya data bachana ho to backup lein.</div><button class=b onclick="exp()">Backup save</button> <button class=b onclick="imp()">Backup wapas lao</button></div>`;
 }
 function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(D)],{type:'application/json'}));a.download='cricket-backup.json';a.click()}
-function imp(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=()=>{const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.p&&d.m){D=d;save();render()}}catch(e){alert('File sahi nahi')}};r.readAsText(i.files[0])};i.click()}
+function imp(){const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=()=>{const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(d.p&&d.m){d.tn=d.tn||[];D=d;save();render()}}catch(e){alert('File sahi nahi')}};r.readAsText(i.files[0])};i.click()}
 
 /* ---------- MATCH SETUP ---------- */
 function tg(id,t){const a=t?T.b:T.a,o=t?T.a:T.b;const i=a.indexOf(id);if(i>=0)a.splice(i,1);else{a.push(id);const j=o.indexOf(id);if(j>=0)o.splice(j,1)}render()}
@@ -202,7 +364,7 @@ function startM(){
  D.m.push(m);save();cm=m.id;T.a=[];T.b=[];render();
 }
 function setupV(){
- const op=D.m.filter(m=>!m.done),dn=D.m.filter(m=>m.done).slice(-8).reverse();
+ const op=D.m.filter(m=>!m.done&&!m.tn),dn=D.m.filter(m=>m.done&&!m.tn).slice(-8).reverse();
  const li=m=>`<div class=row onclick="cm='${m.id}';render()"><span>${m.t[0].n} vs ${m.t[1].n}</span><span class=mu>${m.done?m.res:'Jari ›'}</span></div>`;
  return (op.length?`<div class=c><h3>Jari matches</h3>${op.map(li).join('')}</div>`:'')+
  `<div class=c><h3>Naya match</h3>
@@ -240,7 +402,7 @@ function scorer(){
  const chip=b=>b.out?`<span class="ch o">W</span>`:b.x=='w'?`<span class=ch>Wd</span>`:b.x=='nb'?`<span class=ch>Nb${b.r||''}</span>`:`<span class="ch ${b.r>=4?'f':''}">${b.r}</span>`;
  const bl=id=>{if(!id)return '';const s=bs(n,id);return `<div class=row><span>${av(id,26)}${nm(id)}${id==n.s?' 🏏':''}</span><b>${s.r} <span class=mu>(${s.f})</span></b></div>`};
  const b=n.bw?bw(n,n.bw):null,pc=parts(n).cur,pr=n.s&&n.n?`<div class=row><span class=mu>Partnership</span><span>${pc.r} <span class=mu>(${pc.b})</span></span></div>`:'';
- return `<div class=mu onclick="cm=null;render()" style="margin-bottom:8px">‹ Matches · ${m.t[0].n} vs ${m.t[1].n} <span style="float:right" onclick="event.stopPropagation();shareImg('${m.id}')">📤 Share</span></div>
+ return `<div class=mu onclick="back()" style="margin-bottom:8px">‹ Matches · ${m.t[0].n} vs ${m.t[1].n} <span style="float:right" onclick="event.stopPropagation();shareImg('${m.id}')">📤 Share</span></div>
  <div class=c><div class=mu>${m.t[n.bat].n} batting · Innings ${i+1}</div><div class=big>${t}/${w}</div><div class=mu style="margin-top:4px">${info}</div></div>
  ${n.ended?endBox(m,i):`<div class=c>${bl(n.s)}${bl(n.n)}${n.bw?`<div class=row><span class=mu>Bowler: ${nm(n.bw)}</span><span class=mu>${b.o}-${b.r}-${b.w}</span></div>`:''}${pr}<div style="margin-top:6px">${c.map(chip).join('')||'<span class=mu>Naya over</span>'}</div></div>
  <div class=g>${[0,1,2,3,4,6].map(r=>`<button class="${r>=4?'on':''}" onclick="ball(${r})">${r}</button>`).join('')}
@@ -292,13 +454,13 @@ function summary(m){
   ${ids.map(id=>{const s=bs(n,id);return `<div class=row><span>${nm(id)}${s.o?'':'*'}</span><span>${s.r} (${s.f})</span></div>`}).join('')}
   <div class=mu style="margin:8px 0 2px">Bowling</div>
   ${bo.map(id=>{const s=bw(n,id);return `<div class=row><span>${nm(id)}</span><span>${s.o}-${s.r}-${s.w}</span></div>`}).join('')}${pHtml(n)}</div>`};
- return `<div class=mu onclick="cm=null;render()" style="margin-bottom:8px">‹ Matches</div><div class=c><h3>${m.res}</h3><div class=mu>${new Date(m.d).toLocaleDateString()} · ${m.ov} overs</div></div>${m.inn.map(card).join('')}
+ return `<div class=mu onclick="back()" style="margin-bottom:8px">‹ Matches</div><div class=c><h3>${m.res}</h3><div class=mu>${new Date(m.d).toLocaleDateString()} · ${m.ov} overs</div></div>${m.inn.map(card).join('')}
  <button class="b p" onclick="shareImg('${m.id}')">📤 Scorecard image share</button> <button class=b onclick="undo()">↩ Aakhri ball undo</button> <button class=b style="color:#f88" onclick="if(confirm('Match delete?')){D.m=D.m.filter(x=>x.id!=cm);cm=null;save();render()}">Match delete</button>`;
 }
 
 function render(){
- $('#tabs').innerHTML=[['match','🏏 Match'],['pl','👥 Players'],['st','📊 Stats']].map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';M.style.display='none';render()">${t[1]}</button>`).join('');
- $('#app').innerHTML=(tab=='match'?(cm?scorer():setupV()):tab=='pl'?playersV():statsV())+'<div class=mu style="text-align:center;margin:18px 0 6px">🏏 SadCricScorer · Developed by Sadiq Ahmad</div>';
+ $('#tabs').innerHTML=[['match','🏏 Match'],['tn','🏆 Tournament'],['pl','👥 Players'],['st','📊 Stats']].map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';M.style.display='none';render()">${t[1]}</button>`).join('');
+ $('#app').innerHTML=(tab=='match'?(cm?scorer():setupV()):tab=='tn'?tnV():tab=='pl'?playersV():statsV(null))+'<div class=mu style="text-align:center;margin:18px 0 6px">🏏 SadCricScorer · Developed by Sadiq Ahmad</div>';
  if(tab=='match'&&cm)need();
 }
 render();
